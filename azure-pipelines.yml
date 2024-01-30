@@ -1,0 +1,97 @@
+trigger: none
+#- main
+
+variables:
+  dockerRegistryServiceConnection: 'acrconnection'
+  imageRepository: 'neptune-webapi'
+  # dockerfilePath: '$(Build.SourcesDirectory)/app/Dockerfile'
+  tag: '$(Build.BuildId)'
+  acrName: 'solardemo1contregistrydev'
+  resourceGroup: 'APIM-DEVOPS-Coantapp'
+  containerAppName: 'neptune-webapi'
+  containerAppEnvironment: 'solardemo1-appenv-dev'  
+
+
+
+stages:
+- stage: DeployContainerapp
+  jobs:
+  - job: BuildDockerimageandpush
+    pool: default
+      
+    steps:
+
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'acrconnection'
+        repository: $(imageRepository)
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+        tags: |
+          $(tag)
+
+  - job: UpdateContainerapp
+    pool: default      
+    steps:   
+    
+    #Specify python version if you have side-by-side versions
+ 
+
+    # Install Azure DevOps extension
+    - bash: az extension add -n azure-devops
+      displayName: 'Install Azure DevOps extension'
+
+# Now you can make calls into Azure DevOps CLI
+# ...   
+   
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'masterconnection'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: 'echo "Damayanti"'
+        #scriptLocation: 'inlineScript'
+        #inlineScript: |
+          # az extension add --name containerapp --upgrade
+          # az provider register --namespace Microsoft.App
+          # az provider register --namespace Microsoft.OperationalInsights    
+      
+          # az containerapp update --name neptune-webapi --resource-group APIM-DEVOPS-Coantapp --image solardemo1contregistrydev.azurecr.io/neptune-webapi:$(tag)
+
+      
+        
+    # - task: AzureCLI@2
+    #   inputs:
+    #     azureSubscription: 'MasterConnections'
+    #     scriptType: 'bash'
+    #     scriptLocation: 'scriptPath'
+    #     scriptPath: 'src/NeptureWebAPI/build.sh'
+
+    # - task: AzureContainerApps@1
+    #   inputs:
+    #     appSourcePath: '$(Build.SourcesDirectory)/src'
+    #     azureSubscription: '<AZURE_SUBSCRIPTION_SERVICE_CONNECTION>'
+    #     acrName: '<ACR_NAME>'
+    #     containerAppName: 'my-container-app'
+    #     resourceGroup: 'my-container-app-rg'
+        
+
+# - stage: DeploytoProd
+#   jobs:
+#   - job: Deploy
+#     pool:      
+#         name: default
+#     steps:
+#     - task: DownloadBuildArtifacts@1
+#       inputs:
+#         buildType: 'current'
+#         downloadType: 'single'
+#         artifactName: 'drop'
+#         downloadPath: '$(System.ArtifactsDirectory)'
+#     - task: AzureRmWebAppDeployment@4
+#       inputs:
+#         ConnectionType: 'AzureRM'
+#         azureSubscription: 'MasterConnection'
+#         appType: 'webApp'
+#         WebAppName: 'netcodedemowebapp'
+#         packageForLinux: '$(System.ArtifactsDirectory)/drop/*.zip'      
