@@ -55,6 +55,25 @@ stages:
           az provider register --namespace Microsoft.OperationalInsights    
       
           az containerapp update --name neptune-webapi --resource-group APIM-DEVOPS-Coantapp --image solardemo1contregistrydev.azurecr.io/neptune-webapi:$(tag)
+    
+    # The newly deployed revision can be tested by using the label-specific FQDN
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'masterconnection'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          #get the containerapp environment default domain
+          export APP_DOMAIN=$(az containerapp env show -g $resourceGroup -n $APP_ENVIRONMENT_NAME --query properties.defaultDomain -o tsv | tr -d '\r\n')
+          
+          #Test the production FQDN
+          curl -s https://$containerAppName.$APP_DOMAIN/api/env | jq | grep COMMIT
+          
+          #Test the blue lable FQDN
+          curl -s https://$containerAppName---blue.$APP_DOMAIN/api/env | jq | grep COMMIT
+          
+          #Test the green lable FQDN
+          curl -s https://$containerAppName---green.$APP_DOMAIN/api/env | jq | grep COMMIT
 
       
        
